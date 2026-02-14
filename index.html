@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>PayTracker</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1052/1052856.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    :root {
+      --ios-bg: #f2f2f7;
+      --card-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+    }
+
+    body {
+      background-color: var(--ios-bg);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      box-shadow: var(--card-shadow);
+    }
+
+    .safe-card {
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.4);
+    }
+
+    .btn-active:active {
+      transform: scale(0.96);
+      transition: transform 0.1s ease;
+    }
+
+    /* Hide scrollbars */
+    ::-webkit-scrollbar { 
+      display: none; 
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-900">
+  <div id="app" class="max-w-md mx-auto min-h-screen flex flex-col p-5 pb-24">
+    <!-- DASHBOARD VIEW -->
+    <div id="view-dashboard" class="space-y-6 pt-8 animate-in fade-in duration-500">
+      <header class="flex justify-between items-end">
+        <div>
+          <p class="text-slate-500 text-sm font-semibold uppercase tracking-wider">Welcome back</p>
+          <h1 class="text-3xl font-black tracking-tight">Dashboard</h1>
+        </div>
+        <button onclick="showView('settings')" class="p-3 bg-white rounded-2xl shadow-sm text-slate-400 btn-active">
+          <i data-lucide="settings"></i>
+        </button>
+      </header>
+
+      <div class="safe-card rounded-[2rem] p-7 text-white relative overflow-hidden">
+        <div class="relative z-10">
+          <div class="flex items-center gap-2 opacity-80 mb-1">
+            <i data-lucide="sparkles" class="w-4 h-4"></i>
+            <span class="text-xs font-bold uppercase tracking-widest">Smart Suggestion</span>
+          </div>
+          <p class="text-white/70 text-sm">Best day to ask for pay in <span id="target-month-name">Next Month</span>:</p>
+          <h2 id="suggested-date-display" class="text-5xl font-black mt-2 tracking-tighter italic">...</h2>
+          <button onclick="generateSafeDay(true)" class="mt-6 flex items-center gap-2 bg-white/20 hover:bg-white/30 px-5 py-2.5 rounded-xl text-xs font-bold backdrop-blur-md btn-active transition-all">
+            <i data-lucide="refresh-cw" class="w-3 h-3"></i> Regenerate
+          </button>
+        </div>
+        <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div class="glass p-5 rounded-[1.5rem]">
+          <div class="flex items-center gap-2 text-indigo-500 mb-1">
+            <i data-lucide="clock" class="w-4 h-4"></i>
+            <span class="text-[10px] font-black uppercase tracking-widest">Hours</span>
+          </div>
+          <p id="stat-hours" class="text-3xl font-black text-slate-800 tracking-tight">0.0</p>
+        </div>
+        <div class="glass p-5 rounded-[1.5rem]">
+          <div class="flex items-center gap-2 text-emerald-500 mb-1">
+            <i data-lucide="dollar-sign" class="w-4 h-4"></i>
+            <span class="text-[10px] font-black uppercase tracking-widest">Est. Pay</span>
+          </div>
+          <p id="stat-pay" class="text-3xl font-black text-slate-800 tracking-tight">$0.00</p>
+        </div>
+      </div>
+
+      <button onclick="showView('add-entry')" class="w-full bg-slate-900 text-white py-5 rounded-[1.5rem] font-bold text-lg shadow-xl btn-active flex items-center justify-center gap-3">
+        <i data-lucide="plus-circle"></i> Log Work Hours
+      </button>
+    </div>
+
+    <!-- SETTINGS VIEW -->
+    <div id="view-settings" class="hidden space-y-6 pt-8">
+      <h2 class="text-2xl font-black">App Settings</h2>
+      <div class="glass p-6 rounded-[2rem] space-y-5">
+        <div>
+          <label class="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Hourly Rate ($)</label>
+          <input type="number" id="set-rate" class="w-full bg-slate-100 p-4 rounded-2xl border-none focus:ring-2 focus:ring-indigo-500 font-bold" placeholder="0.00">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Start Day</label>
+            <input type="number" id="set-start" class="w-full bg-slate-100 p-4 rounded-2xl border-none focus:ring-2 focus:ring-indigo-500 font-bold" value="5">
+          </div>
+          <div>
+            <label class="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">End Day</label>
+            <input type="number" id="set-end" class="w-full bg-slate-100 p-4 rounded-2xl border-none focus:ring-2 focus:ring-indigo-500 font-bold" value="20">
+          </div>
+        </div>
+        <div class="flex items-center justify-between p-2">
+          <span class="text-sm font-bold text-slate-600">Exclude Weekends</span>
+          <input type="checkbox" id="set-weekends" checked class="w-6 h-6 accent-indigo-600">
+        </div>
+      </div>
+      <button onclick="saveSettings()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold btn-active">Save & Close</button>
+    </div>
+
+    <!-- ADD ENTRY VIEW -->
+    <div id="view-add-entry" class="hidden space-y-6 pt-8">
+      <h2 class="text-2xl font-black">Log Hours</h2>
+      <div class="glass p-6 rounded-[2rem] space-y-5">
+        <div>
+          <label class="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Date</label>
+          <input type="date" id="entry-date" class="w-full bg-slate-100 p-4 rounded-2xl border-none font-bold">
+        </div>
+        <div>
+          <label class="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Hours Worked</label>
+          <input type="number" id="entry-hours" step="0.5" class="w-full bg-slate-100 p-4 rounded-2xl border-none font-bold" placeholder="e.g. 8.5">
+        </div>
+        <div>
+          <label class="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Notes</label>
+          <input type="text" id="entry-note" class="w-full bg-slate-100 p-4 rounded-2xl border-none font-medium" placeholder="What did you do?">
+        </div>
+      </div>
+      <button onclick="addEntry()" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold btn-active">Save Entry</button>
+      <button onclick="showView('dashboard')" class="w-full text-slate-400 font-bold py-2">Cancel</button>
+    </div>
+  </div>
+
+  <nav class="fixed bottom-0 left-0 right-0 glass px-10 py-4 flex justify-around items-center border-t border-white/20">
+    <button onclick="showView('dashboard')" class="text-indigo-600">
+      <i data-lucide="home"></i>
+    </button>
+    <button onclick="alert('Data is stored locally on this device.')" class="text-slate-400">
+      <i data-lucide="shield-check"></i>
+    </button>
+    <button onclick="showView('settings')" class="text-slate-400">
+      <i data-lucide="user"></i>
+    </button>
+  </nav>
+
+  <script>
+    // INIT ICONS
+    lucide.createIcons();
+
+    // --- STORAGE ---
+    const getData = (key) => JSON.parse(localStorage.getItem(key)) || [];
+    const getSettings = () => JSON.parse(localStorage.getItem('settings')) || { rate: 0, start: 5, end: 20, weekends: true };
+    const getHistory = () => JSON.parse(localStorage.getItem('payHistory')) || {};
+
+    // --- THE VALID LOGIC (MATCHING PROMPT) ---
+    function generateSafeDay(force = false) {
+      const now = new Date();
+      const targetMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      const monthKey = `${targetMonth.getFullYear()}-${targetMonth.getMonth() + 1}`;
+      
+      let history = getHistory();
+      
+      if (!force && history[monthKey]) {
+        renderSuggestion(history[monthKey].day);
+        return;
+      }
+
+      const settings = getSettings();
+      
+      const getLastMonthKey = (offset) => {
+        const d = new Date(now.getFullYear(), now.getMonth() - offset + 1, 1);
+        return `${d.getFullYear()}-${d.getMonth() + 1}`;
+      };
+
+      const lastMonthData = history[getLastMonthKey(0)] || {};
+      const twoMonthsAgoData = history[getLastMonthKey(1)] || {};
+      
+      let pool = [];
+      
+      for (let d = parseInt(settings.start); d <= parseInt(settings.end); d++) {
+        let date = new Date(targetMonth.getFullYear(), targetMonth.getMonth(), d);
+        let dayOfWeek = date.getDay();
+        
+        if (settings.weekends && (dayOfWeek === 0 || dayOfWeek === 6)) continue;
+        if (lastMonthData.day && Math.abs(d - lastMonthData.day) <= 1) continue;
+        if (lastMonthData.weekday === dayOfWeek && twoMonthsAgoData.weekday === dayOfWeek) continue;
+        
+        let weight = 1; 
+        if (d >= 8 && d <= 15) weight = 10;
+        else if (d >= 5 && d <= 7) weight = 5;
+        
+        for (let i = 0; i < weight; i++) pool.push(d);
+      }
+
+      const result = pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : settings.start;
+      
+      history[monthKey] = { 
+        day: result, 
+        weekday: new Date(targetMonth.getFullYear(), targetMonth.getMonth(), result).getDay() 
+      };
+      
+      localStorage.setItem('payHistory', JSON.stringify(history));
+      renderSuggestion(result);
+    }
+
+    // --- UI & STATE ---
+    function showView(viewId) {
+      document.querySelectorAll('[id^="view-"]').forEach(v => v.classList.add('hidden'));
+      document.getElementById(`view-${viewId}`).classList.remove('hidden');
+      lucide.createIcons(); // Refresh icons on every view change
+      if (viewId === 'dashboard') updateDashboard();
+    }
+
+    function updateDashboard() {
+      const entries = getData('workEntries');
+      const now = new Date();
+      const thisMonthEntries = entries.filter(e => {
+        const d = new Date(e.date);
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      });
+
+      const totalHours = thisMonthEntries.reduce((sum, e) => sum + parseFloat(e.hours), 0);
+      const settings = getSettings();
+      
+      document.getElementById('stat-hours').innerText = totalHours.toFixed(1);
+      document.getElementById('stat-pay').innerText = `$${(totalHours * settings.rate).toFixed(2)}`;
+      
+      // Populate settings fields
+      document.getElementById('set-rate').value = settings.rate;
+      
+      generateSafeDay();
+    }
+
+    function renderSuggestion(day) {
+      const now = new Date();
+      const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      const monthName = nextMonth.toLocaleString('default', { month: 'long' });
+      
+      document.getElementById('target-month-name').innerText = monthName;
+      document.getElementById('suggested-date-display').innerText = `${monthName.substring(0,3)} ${day}`;
+    }
+
+    function addEntry() {
+      const date = document.getElementById('entry-date').value;
+      const hours = document.getElementById('entry-hours').value;
+      const note = document.getElementById('entry-note').value;
+
+      if (!date || !hours) return alert('Please enter date and hours');
+
+      const entries = getData('workEntries');
+      entries.push({ date, hours, note });
+      localStorage.setItem('workEntries', JSON.stringify(entries));
+      
+      showView('dashboard');
+    }
+
+    function saveSettings() {
+      const s = {
+        rate: parseFloat(document.getElementById('set-rate').value) || 0,
+        start: parseInt(document.getElementById('set-start').value),
+        end: parseInt(document.getElementById('set-end').value),
+        weekends: document.getElementById('set-weekends').checked
+      };
+      
+      localStorage.setItem('settings', JSON.stringify(s));
+      showView('dashboard');
+    }
+
+    // --- APP START ---
+    document.getElementById('entry-date').valueAsDate = new Date();
+    updateDashboard();
+  </script>
+</body>
+</html>
